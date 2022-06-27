@@ -136,6 +136,8 @@ void initVars() {
 	pallete1 = Pallete(palleteHeight, vec2d(1, palleteY));
 	pallete2 = Pallete(palleteHeight, vec2d(_consoleWidth - 1, palleteY));
 	ball = Ball(vec2d(_centerX, _centerY));
+
+	srand(time(NULL));
 }
 
 void handleInput() {
@@ -194,6 +196,10 @@ void update() {
 	if (_ballMoving) {
 		clearPixel(ball.pos.x, ball.pos.y);
 
+		// normalize velocity so detection can work
+		if (ball.pos.x - pallete1.pos.x - 1 < abs(velocity.x)) velocity.x = -1;
+		if (pallete2.pos.x - ball.pos.x - 1 < abs(velocity.x)) velocity.x = 1;
+
 		if (ball.pos.y <= 0 || ball.pos.y >= _consoleHeight) velocity.y *= -1;
 		if (ball.pos.x < 1) {
 			reset();
@@ -204,8 +210,16 @@ void update() {
 			lScore++;
 		}
 
-		if (ball.pos.x == pallete1.pos.x + 1 && ball.pos.y >= pallete1.pos.y && ball.pos.y <= pallete1.pos.y + pallete1.height) velocity.x *= -1;
-		if (ball.pos.x == pallete2.pos.x - 1 && ball.pos.y >= pallete2.pos.y && ball.pos.y <= pallete2.pos.y + pallete2.height) velocity.x *= -1;
+		if (ball.pos.x == pallete1.pos.x + 1 && ball.pos.y >= pallete1.pos.y && ball.pos.y <= pallete1.pos.y + pallete1.height) {
+			// randomize direction and speed
+			velocity.x = rand() % 1 + 2;
+			velocity.y = rand() % -1 + 1;
+		}
+		if (ball.pos.x == pallete2.pos.x - 1 && ball.pos.y >= pallete2.pos.y && ball.pos.y <= pallete2.pos.y + pallete2.height) {
+			// randomize direction and speed
+			velocity.x = rand() % -1 + -2;
+			velocity.y = rand() % -1 + 1;
+		}
 
 		ball.pos += velocity;
 	}
