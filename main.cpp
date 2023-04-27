@@ -1,6 +1,7 @@
 #include <iostream>
 #include <windows.h>
 #include <thread>
+#include <math.h>
 
 using namespace std;
 
@@ -39,15 +40,15 @@ void setupScreen() {
 	clearScreen();
 }
 
-void print(int px, int py, wstring text) {
+void printScr(int px, int py, wstring text) {
 	int offset = (py * _consoleWidth) + px;
 
 	for (unsigned int i = 0; i < text.size(); i++)
 		screen[offset + i] = text[i];
 }
 
-void print(int px, int py, wchar_t text) {
-	print(px, py, wstring(1, text));
+void printScr(int px, int py, wchar_t text) {
+	printScr(px, py, wstring(1, text));
 }
 
 void clearRow(int row) {
@@ -103,7 +104,7 @@ public:
 
 	void draw() {
 		for (int i = 0; i < height; i++)
-			print(this->pos.x, this->pos.y + i, L'█');
+			printScr(this->pos.x, this->pos.y + i, L'█');
 	}
 };
 
@@ -118,7 +119,7 @@ public:
 	Ball(vec2d pos): pos(pos) {};
 
 	void draw() {
-		print(this->pos.x, this->pos.y, L'⬤');
+		printScr(this->pos.x, this->pos.y, L'⬤');
 	}
 };
 
@@ -153,6 +154,11 @@ void handleInput() {
 		_rKeys[key] = (0x8000 & GetAsyncKeyState((unsigned char)("\x26\x28"[key]))) != 0;
 
 	if (GetAsyncKeyState('\x45') != 0) _ballMoving = true;
+
+	// cheat code for trolling
+	if (GetAsyncKeyState('\x12') != 0) velocity.x *= -1;
+	// cheat code for trolling
+	if (GetAsyncKeyState('\x11') != 0) velocity.y *= -1;
 
 	if (!_ballMoving) return;
 
@@ -194,34 +200,51 @@ void reset() {
 
 void update() {
 	if (_ballMoving) {
+		if (ball.pos.x >= _consoleWidth - 1) {
+			rScore++;
+			clearPixel(ball.pos.x, ball.pos.y);
+			return reset();
+		}
+
+		if (ball.pos.x < 1) {
+			lScore++;
+			clearPixel(ball.pos.x, ball.pos.y);
+			return reset();
+		}
+
+		if (ball.pos.y < 0 || ball.pos.y > _consoleHeight)
+			ball.pos.y = _consoleHeight - 1;
+
 		clearPixel(ball.pos.x, ball.pos.y);
 
-		// normalize velocity so detection can work
+		if (ball.pos.y <= 0 || ball.pos.y >= _consoleHeight)
+			velocity.y *= -1;
+		
 		if (ball.pos.x - pallete1.pos.x - 1 < abs(velocity.x)) velocity.x = -1;
 		if (pallete2.pos.x - ball.pos.x - 1 < abs(velocity.x)) velocity.x = 1;
+		
+		if (ball.pos.x == (pallete1.pos.x + abs(velocity.x)) && ball.pos.y >= pallete1.pos.y && ball.pos.y <= pallete1.pos.y + pallete1.height) {
+			int mul = 1;
+			if(rand() % 100 > 50) mul = -1;
 
-		if (ball.pos.y <= 0 || ball.pos.y >= _consoleHeight) velocity.y *= -1;
-		if (ball.pos.x < 1) {
-			reset();
-			rScore++;
-			
-		} else if (ball.pos.x > _consoleWidth - 2) {
-			reset();
-			lScore++;
-		}
+			ball.pos.x = pallete1.pos.x + 1;
 
-		if (ball.pos.x == pallete1.pos.x + 1 && ball.pos.y >= pallete1.pos.y && ball.pos.y <= pallete1.pos.y + pallete1.height) {
 			// randomize direction and speed
-			velocity.x = rand() % 1 + 2;
-			velocity.y = rand() % -1 + 1;
+			velocity.x = rand() % 1 + 3;
+			velocity.y = mul;
 		}
-		if (ball.pos.x == pallete2.pos.x - 1 && ball.pos.y >= pallete2.pos.y && ball.pos.y <= pallete2.pos.y + pallete2.height) {
+		if (ball.pos.x >= (pallete2.pos.x - abs(velocity.x)) && ball.pos.y >= pallete2.pos.y && ball.pos.y <= pallete2.pos.y + pallete2.height) {
+			int mul = 1;
+			if(rand() % 100 > 50) mul = -1;
+
+			ball.pos.x = pallete2.pos.x - 1;
+
 			// randomize direction and speed
-			velocity.x = rand() % -1 + -2;
-			velocity.y = rand() % -1 + 1;
+			velocity.x = rand() % -1 + -3;
+			velocity.y = mul;
 		}
 
-		ball.pos += velocity;
+		ball.pos += vec2d(velocity.x, velocity.y);
 	}
 }
 
@@ -236,11 +259,11 @@ void draw() {
 
 	if (!_ballMoving) {
 		wstring text = L"Press 'E' to start game";
-		print(_centerX - text.size() / 2, 5, text);
+		printScr(_centerX - text.size() / 2, 5, text);
 	}
 
-	print(_centerX / 2, 5, to_wstring(lScore));
-	print(_centerX * 1.5, 5, to_wstring(rScore));
+	printScr(_centerX / 2, 5, to_wstring(lScore));
+	printScr(_centerX * 1.5, 5, to_wstring(rScore));
 
 	pallete1.draw();
 	pallete2.draw();
