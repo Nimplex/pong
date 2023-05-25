@@ -57,6 +57,7 @@ void clearRow(int row) {
 }
 
 void clearPixel(int x, int y) {
+	if (y < 0 || y > _consoleHeight || x < 0 || x > _consoleWidth) return;
 	screen[y * _consoleWidth + x] = L' ';
 }
 
@@ -201,13 +202,13 @@ void reset() {
 void update() {
 	if (_ballMoving) {
 		if (ball.pos.x >= _consoleWidth - 1) {
-			rScore++;
+			lScore++;
 			clearPixel(ball.pos.x, ball.pos.y);
 			return reset();
 		}
 
 		if (ball.pos.x < 1) {
-			lScore++;
+			rScore++;
 			clearPixel(ball.pos.x, ball.pos.y);
 			return reset();
 		}
